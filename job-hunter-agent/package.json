@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "mastra dev",
     "build": "mastra build",
-    "start": "mastra start"
+    "start": "mastra start",
+    "postinstall": "patch-package"
   },
   "keywords": [],
   "author": "",
@@ -17,17 +18,21 @@
     "node": ">=22.13.0"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.43",
     "@mastra/core": "^1.13.2",
     "@mastra/evals": "^1.1.2",
     "@mastra/libsql": "^1.7.0",
     "@mastra/loggers": "^1.0.2",
     "@mastra/memory": "^1.8.2",
     "@mastra/observability": "^1.5.0",
+    "@mastra/yc-hn-tools": "^0.0.7",
+    "exceljs": "^4.4.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "mastra": "^1.3.12",
+    "patch-package": "^8.0.1",
     "typescript": "^5.9.3"
   }
 }
