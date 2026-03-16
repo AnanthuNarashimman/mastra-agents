@@ -11,11 +11,13 @@ export {
 
 const YC_BASE_URL = "https://api.ycombinator.com/v0.1";
 
-// ── Fetch-all tool (paginated) ────────────────────────────────────────────────
+// fetch-all tool (paginated) 
 export const ycFetchAllTool = createTool({
   id: "yc-fetch-all",
   description:
     "Fetch ALL YC companies matching a query/filter by automatically looping through every page. Use this instead of ycSearchTool when the user wants a large or complete dataset.",
+
+  // Input schema : format of input accepted by the tool
   inputSchema: z.object({
     query: z.string().optional().describe("Search keyword, country, industry, etc."),
     batch: z.string().optional().describe("YC batch e.g. W24, S23"),
@@ -26,11 +28,14 @@ export const ycFetchAllTool = createTool({
       .default(10)
       .describe("Max pages to fetch (each page = 20 companies). Default 10 → up to 200 companies."),
   }),
+
+  // Output schema : format of output returned by the tool
   outputSchema: z.object({
     companies: z.array(z.any()),
     totalFetched: z.number(),
     pagesScanned: z.number(),
   }),
+
   execute: async ({ query, batch, status, maxPages = 10 }) => {
     const allCompanies: any[] = [];
     let page = 0;
@@ -60,7 +65,7 @@ export const ycFetchAllTool = createTool({
   },
 });
 
-// ── Fetch-all + export in one shot ───────────────────────────────────────────
+// fetch-all + export in one shot 
 export const ycFetchAndExportTool = createTool({
   id: "yc-fetch-and-export",
   description:
@@ -78,7 +83,7 @@ export const ycFetchAndExportTool = createTool({
     message: z.string(),
   }),
   execute: async ({ query, batch, status, maxPages = 10, filename }) => {
-    // Step 1: fetch all pages
+    // 1. fetch all pages
     const allCompanies: any[] = [];
     let page = 0;
     let totalPages = 1;
@@ -99,7 +104,7 @@ export const ycFetchAndExportTool = createTool({
       page++;
     }
 
-    // Step 2: write to Excel
+    // 2. write to Excel
     const outputDir = path.resolve(process.cwd(), "output");
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
@@ -133,15 +138,12 @@ export const ycFetchAndExportTool = createTool({
 
     const headerRow = sheet.getRow(1);
     headerRow.eachCell((cell) => {
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF6600" } };
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11, name: "Calibri" };
-      cell.alignment = { vertical: "middle", horizontal: "center" };
-      cell.border = { bottom: { style: "medium", color: { argb: "FFCC5200" } } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD3D3D3" } };
+      cell.font = { bold: true };
     });
-    headerRow.height = 22;
 
-    allCompanies.forEach((company: any, index: number) => {
-      const row = sheet.addRow({
+    allCompanies.forEach((company: any) => {
+      sheet.addRow({
         name:       company.name ?? "",
         oneLiner:   company.oneLiner ?? "",
         batch:      company.batch ?? "",
@@ -154,26 +156,6 @@ export const ycFetchAndExportTool = createTool({
         regions:    (company.regions ?? []).join(", "),
         url:        company.url ?? "",
       });
-
-      const bgColor = index % 2 === 0 ? "FFFFFFFF" : "FFFFF3EC";
-      row.eachCell((cell) => {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bgColor } };
-        cell.alignment = { vertical: "top", wrapText: true };
-        cell.font = { size: 10, name: "Calibri" };
-      });
-
-      if (company.website) {
-        const c = row.getCell("website");
-        c.value = { text: company.website, hyperlink: company.website };
-        c.font = { size: 10, name: "Calibri", color: { argb: "FF0563C1" }, underline: true };
-      }
-      if (company.url) {
-        const c = row.getCell("url");
-        c.value = { text: company.url, hyperlink: company.url };
-        c.font = { size: 10, name: "Calibri", color: { argb: "FF0563C1" }, underline: true };
-      }
-
-      row.height = 40;
     });
 
     sheet.autoFilter = {
@@ -252,7 +234,7 @@ export const exportToExcelTool = createTool({
       views: [{ state: "frozen", ySplit: 1 }],
     });
 
-    // ── Column definitions ────────────────────────────────────────────────────
+    // Column definitions 
     sheet.columns = [
       { header: "Company", key: "name", width: 28 },
       { header: "One-liner", key: "oneLiner", width: 50 },
@@ -267,90 +249,31 @@ export const exportToExcelTool = createTool({
       { header: "YC Profile", key: "url", width: 45 },
     ];
 
-    // ── Header row styling ────────────────────────────────────────────────────
+    // Header row styling
     const headerRow = sheet.getRow(1);
     headerRow.eachCell((cell) => {
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFFF6600" }, // YC orange
-      };
-      cell.font = {
-        bold: true,
-        color: { argb: "FFFFFFFF" },
-        size: 11,
-        name: "Calibri",
-      };
-      cell.alignment = { vertical: "middle", horizontal: "center" };
-      cell.border = {
-        bottom: { style: "medium", color: { argb: "FFCC5200" } },
-      };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD3D3D3" } };
+      cell.font = { bold: true };
     });
-    headerRow.height = 22;
 
-    // ── Data rows ─────────────────────────────────────────────────────────────
-    companies.forEach(
-      (company: z.infer<typeof companySchema>, index: number) => {
-        const row = sheet.addRow({
-          name: company.name ?? "",
-          oneLiner: company.oneLiner ?? "",
-          batch: company.batch ?? "",
-          status: company.status ?? "",
-          teamSize: company.teamSize ?? "",
-          website: company.website ?? "",
-          tags: (company.tags ?? []).join(", "),
-          industries: (company.industries ?? []).join(", "),
-          locations: (company.locations ?? []).join(", "),
-          regions: (company.regions ?? []).join(", "),
-          url: company.url ?? "",
-        });
+    // Data rows
+    companies.forEach((company: z.infer<typeof companySchema>) => {
+      sheet.addRow({
+        name: company.name ?? "",
+        oneLiner: company.oneLiner ?? "",
+        batch: company.batch ?? "",
+        status: company.status ?? "",
+        teamSize: company.teamSize ?? "",
+        website: company.website ?? "",
+        tags: (company.tags ?? []).join(", "),
+        industries: (company.industries ?? []).join(", "),
+        locations: (company.locations ?? []).join(", "),
+        regions: (company.regions ?? []).join(", "),
+        url: company.url ?? "",
+      });
+    });
 
-        // Zebra striping
-        const bgColor = index % 2 === 0 ? "FFFFFFFF" : "FFFFF3EC";
-        row.eachCell((cell) => {
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: bgColor },
-          };
-          cell.alignment = { vertical: "top", wrapText: true };
-          cell.font = { size: 10, name: "Calibri" };
-        });
-
-        // Make website & YC Profile clickable hyperlinks
-        if (company.website) {
-          const websiteCell = row.getCell("website");
-          websiteCell.value = {
-            text: company.website,
-            hyperlink: company.website,
-          };
-          websiteCell.font = {
-            size: 10,
-            name: "Calibri",
-            color: { argb: "FF0563C1" },
-            underline: true,
-          };
-        }
-
-        if (company.url) {
-          const profileCell = row.getCell("url");
-          profileCell.value = {
-            text: company.url,
-            hyperlink: company.url,
-          };
-          profileCell.font = {
-            size: 10,
-            name: "Calibri",
-            color: { argb: "FF0563C1" },
-            underline: true,
-          };
-        }
-
-        row.height = 40;
-      },
-    );
-
-    // ── Auto-filter on header row ─────────────────────────────────────────────
+    // Auto-filter on header row 
     sheet.autoFilter = {
       from: { row: 1, column: 1 },
       to: { row: 1, column: sheet.columns.length },
