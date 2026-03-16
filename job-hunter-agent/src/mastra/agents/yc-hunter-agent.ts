@@ -25,6 +25,8 @@ export const jobHunterAgent = new Agent({
       - Company name, one-liner, batch, location, website, tags
 
     Always return real data from tools. Never make up company details.
+
+    After exporting, return a confirmation message with the file name and a brief summary of the results to the user interface.
   `,
   model: "google/gemini-2.5-flash-lite",
   tools: { ycSearchTool, ycDetailTool, ycFetchAllTool, ycFetchAndExportTool, exportToExcelTool },
