@@ -21,12 +21,12 @@ export const jobHunterAgent = new Agent({
     Pass location, country, industry, or any keyword as the "query" field.
     Examples: query="India", query="fintech", query="B2B SaaS", batch="W24"
 
-    After fetching (non-export), return a clean list with:
-      - Company name, one-liner, batch, location, website, tags
+    AFTER EVERY TOOL CALL YOU MUST ALWAYS SEND A TEXT REPLY. Never stay silent after a tool executes.
+
+    After ycFetchAndExportTool: reply with a confirmation message. Wrap the exact file name in backticks like \`filename.xlsx\` and mention the total number of companies exported.
+    After ycFetchAllTool or ycSearchTool: reply with a clean list of companies — name, one-liner, batch, location, website, tags.
 
     Always return real data from tools. Never make up company details.
-
-    After exporting, return a confirmation message with the file name and a brief summary of the results to the user interface.
   `,
   model: "google/gemini-2.5-flash-lite",
   tools: { ycSearchTool, ycDetailTool, ycFetchAllTool, ycFetchAndExportTool, exportToExcelTool },
